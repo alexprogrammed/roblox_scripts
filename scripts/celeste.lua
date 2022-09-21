@@ -14,7 +14,6 @@ local root:BasePart = character:WaitForChild("HumanoidRootPart", math.huge)
 local camera:Camera = Workspace.CurrentCamera
 
 local canDash:boolean = true
-local isClimbing:boolean = false
 
 local connections:{RBXScriptConnection} = {}
 
@@ -38,16 +37,6 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input:Inp
 			end
 		end
 	end
-	if input.KeyCode == Enum.KeyCode.Z then
-		isClimbing = true
-	end
-end))
-
-table.insert(connections, UserInputService.InputEnded:Connect(function(input:InputObject, gameProcessed:boolean)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.Z then
-		isClimbing = false
-	end
 end))
 
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
@@ -58,8 +47,12 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 		canDash = true
 	end
 	
-	if isClimbing then
-		local ray = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2)
+	if UserInputService:IsKeyDown(Enum.KeyCode.Z) then
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Blacklist
+		params.FilterDescendantsInstances = character:GetChildren()
+		
+		local ray = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
 		if ray then
 			local vel = 0
 			
@@ -70,12 +63,10 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			end
 			
 			for _, part in pairs(character:GetChildren()) do
-				if part:IsA("BasePart") then					
+				if part:IsA("BasePart") then				
 					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, vel, part.AssemblyLinearVelocity.Z)
 				end
 			end
-		else
-			isClimbing = false
 		end
 	end
 end))
