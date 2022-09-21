@@ -1,6 +1,4 @@
--- Mechanics from Celeste, requested by a friend.
-
--- X to Dash
+-- Celeste movement mechanics but in Roblox, requested by a friend.
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
