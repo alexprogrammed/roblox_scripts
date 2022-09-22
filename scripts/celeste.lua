@@ -51,12 +51,12 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input:Inp
 			local instance:Instance = ray.Instance
 			local normal:Vector3 = ray.Normal
 			
-			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - normal, Vector3.new(0, 30, 0))
+			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - normal)
 			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then					
-					part.AssemblyLinearVelocity = normal.Unit * 40
+					part.AssemblyLinearVelocity = Vector3.new(normal.X, normal.Y + 1, normal.Z).Unit * 50
 				end
 			end
 			
@@ -97,7 +97,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then
-					part.AssemblyLinearVelocity = Vector3.new((UserInputService:IsKeyDown(Enum.KeyCode.A) and -humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.D) and humanoid.WalkSpeed), (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
+					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
 				end
 			end
 		end
