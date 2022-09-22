@@ -1,4 +1,4 @@
--- Celeste movement mechanics but in Roblox, requested by a friend.
+-- Celeste movement mechanics but in Roblox, requested by a friend. 
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -18,9 +18,11 @@ local canDash:boolean = true
 local connections:{RBXScriptConnection} = {}
 
 local lastDelay:number = 0
+local lastJump:number = os.clock()
 
 table.insert(connections, UserInputService.InputBegan:Connect(function(input:InputObject, gameProcessed:boolean)
 	if gameProcessed then return end
+	
 	if input.KeyCode == Enum.KeyCode.X then
 		if canDash then
 			canDash = false
@@ -37,34 +39,67 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input:Inp
 			end
 		end
 	end
+	
+	if input.KeyCode == Enum.KeyCode.Space then
+		local params:OverlapParams = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Blacklist
+		params.FilterDescendantsInstances = character:GetChildren()
+		
+		local ray:RaycastResult = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * 2, params)
+		
+		if ray then
+			local instance:Instance = ray.Instance
+			local normal:Vector3 = ray.Normal
+			
+			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - normal, Vector3.new(0, 30, 0))
+			character:PivotTo(pivotTo)
+			
+			for _, part in pairs(character:GetChildren()) do
+				if part:IsA("BasePart") then					
+					part.AssemblyLinearVelocity = normal.Unit * 40
+				end
+			end
+			
+			lastJump = os.clock()
+		end
+	end
 end))
 
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	lastDelay = d
-	local state = humanoid:GetState()
+	local state:Enum.HumanoidStateType = humanoid:GetState()
 	
 	if state == Enum.HumanoidStateType.Running then
 		canDash = true
 	end
 	
 	if UserInputService:IsKeyDown(Enum.KeyCode.Z) then
-		local params = RaycastParams.new()
+		if os.clock() - lastJump < 0.1 then return end 
+		
+		local params:OverlapParams = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
 		params.FilterDescendantsInstances = character:GetChildren()
 		
-		local ray = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
+		local ray:RaycastResult = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
 		if ray then
-			local vel = 0
+			local instance:Instance = ray.Instance
+			local normal:Vector3 = ray.Normal
+			local distance:number = ray.Distance
 			
-			if UserInputService:IsKeyDown(Enum.KeyCode.E) then
-				vel = humanoid.WalkSpeed
-			elseif UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-				vel = -humanoid.WalkSpeed
+			local size:Vector3 = instance.Size
+			local cframe:CFrame = instance.CFrame
+			
+			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - (normal))
+			
+			if distance > 1.1 then
+				pivotTo *= CFrame.new(0, 0, - (distance - 1.1))
 			end
+			
+			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then				
-					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, vel, part.AssemblyLinearVelocity.Z)
+					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
 				end
 			end
 		end
