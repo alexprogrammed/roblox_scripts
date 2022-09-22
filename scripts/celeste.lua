@@ -74,7 +74,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	end
 	
 	if UserInputService:IsKeyDown(Enum.KeyCode.Z) then
-		if os.clock() - lastJump < 0.1 then return end 
+		if os.clock() - lastJump < 0.1 then return end
 		
 		local params:OverlapParams = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
@@ -91,15 +91,13 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			
 			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - (normal))
 			
-			if distance > 1.1 then
-				pivotTo *= CFrame.new(0, 0, - (distance - 1.1))
-			end
+			pivotTo *= CFrame.new(0, 0, - (distance - (humanoid.RigType == Enum.HumanoidRigType.R6 and 0.6 or 1.1)))
 			
 			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
-				if part:IsA("BasePart") then				
-					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
+				if part:IsA("BasePart") then
+					part.AssemblyLinearVelocity = Vector3.new((UserInputService:IsKeyDown(Enum.KeyCode.A) and -humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.D) and humanoid.WalkSpeed), (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
 				end
 			end
 		end
