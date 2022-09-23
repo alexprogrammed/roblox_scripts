@@ -14,6 +14,7 @@ local root:BasePart = character:WaitForChild("HumanoidRootPart", math.huge)
 local camera:Camera = Workspace.CurrentCamera
 
 local canDash:boolean = true
+local isClimbing:boolean = false
 
 local connections:{RBXScriptConnection} = {}
 
@@ -41,6 +42,8 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input:Inp
 	end
 	
 	if input.KeyCode == Enum.KeyCode.Space then
+		if humanoid:GetState() == Enum.HumanoidStateType.Climbing or humanoid:GetState() == Enum.HumanoidStateType.Running then return end
+		
 		local params:OverlapParams = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
 		params.FilterDescendantsInstances = character:GetChildren()
@@ -63,6 +66,10 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input:Inp
 			lastJump = os.clock()
 		end
 	end
+	
+	if input.KeyCode == Enum.KeyCode.Z then
+		isClimbing = not isClimbing
+	end
 end))
 
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
@@ -73,7 +80,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 		canDash = true
 	end
 	
-	if UserInputService:IsKeyDown(Enum.KeyCode.Z) then
+	if isClimbing then
 		if os.clock() - lastJump < 0.1 then return end
 		
 		local params:OverlapParams = RaycastParams.new()
@@ -81,6 +88,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 		params.FilterDescendantsInstances = character:GetChildren()
 		
 		local ray:RaycastResult = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
+		
 		if ray then
 			local instance:Instance = ray.Instance
 			local normal:Vector3 = ray.Normal
@@ -92,7 +100,6 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			local pivotTo:CFrame = CFrame.lookAt(root.Position, root.Position - (normal))
 			
 			pivotTo *= CFrame.new(0, 0, - (distance - (humanoid.RigType == Enum.HumanoidRigType.R6 and 0.6 or 1.1)))
-			
 			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
@@ -100,6 +107,8 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
 				end
 			end
+		else
+			isClimbing = false
 		end
 	end
 end))
