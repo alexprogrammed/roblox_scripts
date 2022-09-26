@@ -19,8 +19,10 @@ local isClimbing = false
 
 local connections = {}
 
-local lastDelay = 0
+local lastRenderSteppedDelay = 0
 local lastJump = os.clock()
+
+if humanoid.Health <= 0 then return end
 
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
@@ -29,14 +31,45 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 		if canDash then
 			canDash = false
 			local lookVector = camera.CFrame.LookVector
-			local fps = 1 / lastDelay
-			for i = 1, fps / 5 do
-				task.delay(lastDelay * i, function()
+			local fps = 1 / lastRenderSteppedDelay
+			
+			local threads = {}
+			
+			local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
+				if new == Enum.HumanoidStateType.Landed and old == Enum.HumanoidStateType.Freefall then
+					lookVector = Vector3.new(lookVector.X, 0, lookVector.Z)
+				end
+				
+				if new == Enum.HumanoidStateType.Jumping and old == Enum.HumanoidStateType.Running then
+					for _, thread in pairs(threads) do
+						coroutine.close(thread)
+					end
+					
 					for _, part in pairs(character:GetChildren()) do
-						if part:IsA("BasePart") then					
-							part.AssemblyLinearVelocity = lookVector * 75
+						if part:IsA("BasePart") then
+							part.AssemblyLinearVelocity = Vector3.new(lookVector.Unit.X, 0.5, lookVector.Unit.Z)
 						end
 					end
+				end
+			end)
+			
+			task.delay((lastRenderSteppedDelay * (fps / 5)), function()
+				stateChangedConnection:Disconnect()
+			end)
+			
+			for i = 1, fps / 5 do
+				local thread = coroutine.create(function()
+					for _, part in pairs(character:GetChildren()) do
+						if part:IsA("BasePart") then
+							part.AssemblyLinearVelocity = lookVector.Unit * 75
+						end
+					end
+				end)
+				
+				table.insert(threads, thread)
+				
+				task.delay(lastRenderSteppedDelay * i, function()
+					coroutine.resume(thread)
 				end)
 			end
 		end
@@ -50,12 +83,16 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 		params.FilterDescendantsInstances = character:GetChildren()
 		
 		local ray = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * 2, params)
+		local ray2 = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * -2, params)
 		
-		if ray then
-			local instance = ray.Instance
-			local normal = ray.Normal
+		if ray or ray2 then
 			
-			local pivotTo = CFrame.lookAt(root.Position, root.Position - normal)
+			local currentRay = ray or ray2
+			
+			local instance = currentRay.Instance
+			local normal = currentRay.Normal
+			
+			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and normal.X) or (currentRay == ray2 and -normal.X), 0, (currentRay == ray and normal.Z) or (currentRay == ray2 and -normal.Z)))
 			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
@@ -74,7 +111,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 end))
 
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
-	lastDelay = d
+	lastRenderSteppedDelay = d
 	local state = humanoid:GetState()
 	
 	if state == Enum.HumanoidStateType.Running then
@@ -98,14 +135,16 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			local size = instance.Size
 			local cframe = instance.CFrame
 			
-			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new(normal.X, 0, normal.Z))
+			local updatedNormal = Vector3.new(normal.X, 0, normal.Z)
+			
+			local pivotTo = CFrame.lookAt(root.Position, root.Position - updatedNormal)
 			
 			pivotTo *= CFrame.new(0, 0, - (distance - (humanoid.RigType == Enum.HumanoidRigType.R6 and 0.6 or 1.1)))
-			character:PivotTo(pivotTo)
+			character:PivotTo(pivotTo) 
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then
-					part.AssemblyLinearVelocity = Vector3.new(part.AssemblyLinearVelocity.X, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), part.AssemblyLinearVelocity.Z)
+					part.AssemblyLinearVelocity = Vector3.new((UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.D)) and root.AssemblyLinearVelocity.X or 0, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), (UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.D)) and root.AssemblyLinearVelocity.Z or 0)
 				end
 			end
 		else
@@ -114,7 +153,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	end
 end))
 
-humanoid.Died:Connect(function()
+humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
 		connection:Disconnect()
 	end
