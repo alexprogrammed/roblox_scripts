@@ -1,4 +1,5 @@
--- Celeste movement mechanics but in Roblox, requested by a friend. 
+-- Celeste movement mechanics but in Roblox, requested by a friend.
+-- Dashing, Climbing and WallJumping
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
