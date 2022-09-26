@@ -68,7 +68,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 		end
 	end
 	
-	if input.KeyCode == Enum.KeyCode.Z then
+	if input.KeyCode == Enum.KeyCode.Z or input.KeyCode == Enum.KeyCode.Q then
 		isClimbing = not isClimbing
 	end
 end))
