@@ -28,6 +28,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 	
 	if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.X then
 		if canDash then
+			isClimbing = false
 			canDash = false
 			local lookVector = camera.CFrame.LookVector
 			local fps = 1 / lastRenderSteppedDelay
@@ -91,12 +92,14 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 		
 		if ray or ray2 then
 			
+			isClimbing = false
+			
 			local currentRay = ray or ray2
 			
 			local instance = currentRay.Instance
 			local normal = currentRay.Normal
 			
-			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and normal.X) or (currentRay == ray2 and -normal.X), 0, (currentRay == ray and normal.Z) or (currentRay == ray2 and -normal.Z)))
+			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and -normal.X) or (currentRay == ray2 and normal.X), 0, (currentRay == ray and -normal.Z) or (currentRay == ray2 and normal.Z)))
 			character:PivotTo(pivotTo)
 			
 			for _, part in pairs(character:GetChildren()) do
@@ -119,12 +122,12 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	local state = humanoid:GetState()
 	
 	if state == Enum.HumanoidStateType.Running then
-		canDash = true
+		if not isClimbing then
+			canDash = true
+		end
 	end
 	
 	if isClimbing then
-		if os.clock() - lastJump < 0.1 then return end
-		
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
 		params.FilterDescendantsInstances = character:GetChildren()
@@ -132,6 +135,10 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 		local ray = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
 		
 		if ray then
+			if os.clock() - lastJump < 0.1 then
+				return
+			end
+			
 			local instance = ray.Instance
 			local normal = ray.Normal
 			local distance = ray.Distance
@@ -143,12 +150,24 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			
 			local pivotTo = CFrame.lookAt(root.Position, root.Position - updatedNormal)
 			
-			pivotTo *= CFrame.new(0, 0, - (distance - (humanoid.RigType == Enum.HumanoidRigType.R6 and 0.6 or 1.1)))
-			character:PivotTo(pivotTo) 
+			pivotTo *= CFrame.new(0, 0, - (distance - 0.7))
+			character:PivotTo(pivotTo)
+			
+			local cross = pivotTo.RightVector.Unit
+			
+			local velocity = Vector3.new(0, (UserInputService:IsKeyDown(Enum.KeyCode.W) and 1) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -1) or 0, 0)
+			
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				velocity += cross
+			elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
+				velocity -= cross
+			end
+			
+			local unit = velocity ~= Vector3.new(0, 0, 0) and velocity.Unit or Vector3.new(0, 0, 0)
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then
-					part.AssemblyLinearVelocity = Vector3.new((UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.D)) and root.AssemblyLinearVelocity.X or 0, (UserInputService:IsKeyDown(Enum.KeyCode.W) and humanoid.WalkSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.S) and -humanoid.WalkSpeed), (UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.D)) and root.AssemblyLinearVelocity.Z or 0)
+					part.AssemblyLinearVelocity = unit * humanoid.WalkSpeed
 				end
 			end
 		else
