@@ -1,4 +1,5 @@
 -- Celeste movement mechanics but in Roblox, requested by a friend.
+-- https://github.com/nilkibite/roblox_scripts/blob/main/scripts/celeste.lua
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
