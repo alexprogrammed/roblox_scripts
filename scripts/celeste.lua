@@ -24,7 +24,7 @@ local lastJump = os.clock()
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	
-	if input.KeyCode == Enum.KeyCode.X then
+	if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.X then
 		if canDash then
 			canDash = false
 			local lookVector = camera.CFrame.LookVector
@@ -59,7 +59,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 			
 			for _, part in pairs(character:GetChildren()) do
 				if part:IsA("BasePart") then					
-					part.AssemblyLinearVelocity = Vector3.new(normal.X, normal.Y + 1, normal.Z).Unit * 50
+					part.AssemblyLinearVelocity = Vector3.new(normal.X, 1, normal.Z).Unit * 60
 				end
 			end
 			
@@ -97,7 +97,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			local size = instance.Size
 			local cframe = instance.CFrame
 			
-			local pivotTo = CFrame.lookAt(root.Position, root.Position - (normal))
+			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new(normal.X, 0, normal.Z))
 			
 			pivotTo *= CFrame.new(0, 0, - (distance - (humanoid.RigType == Enum.HumanoidRigType.R6 and 0.6 or 1.1)))
 			character:PivotTo(pivotTo)
