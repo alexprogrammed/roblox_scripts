@@ -35,28 +35,32 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 			local threads = {}
 			
 			local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
-				if new == Enum.HumanoidStateType.Landed and old == Enum.HumanoidStateType.Freefall then
+				if new == Enum.HumanoidStateType.Landed then
 					lookVector = Vector3.new(lookVector.X, 0, lookVector.Z)
 				end
 				
-				if new == Enum.HumanoidStateType.Jumping and old == Enum.HumanoidStateType.Running then
+				if new == Enum.HumanoidStateType.Jumping then
 					for _, thread in pairs(threads) do
 						coroutine.close(thread)
 					end
 					
-					for _, part in pairs(character:GetChildren()) do
-						if part:IsA("BasePart") then
-							part.AssemblyLinearVelocity = Vector3.new(lookVector.Unit.X, 0.5, lookVector.Unit.Z)
-						end
+					for i = 1, fps / 4 do
+						task.delay(lastRenderSteppedDelay * i, function()
+							for _, part in pairs(character:GetChildren()) do
+								if part:IsA("BasePart") then
+									part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.5, lookVector.Z).Unit * 75
+								end
+							end
+						end)
 					end
 				end
 			end)
 			
-			task.delay((lastRenderSteppedDelay * (fps / 5)), function()
+			task.delay((lastRenderSteppedDelay * (fps / 6)), function()
 				stateChangedConnection:Disconnect()
 			end)
 			
-			for i = 1, fps / 5 do
+			for i = 1, fps / 4 do
 				local thread = coroutine.create(function()
 					for _, part in pairs(character:GetChildren()) do
 						if part:IsA("BasePart") then
@@ -68,6 +72,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 				table.insert(threads, thread)
 				
 				task.delay(lastRenderSteppedDelay * i, function()
+					if coroutine.status(thread) == "dead" then return end
 					coroutine.resume(thread)
 				end)
 			end
