@@ -32,16 +32,6 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 			isClimbing = false
 			canDash = false
 			
-			task.spawn(function()
-				local sound = Instance.new("Sound")
-				sound.SoundId = "rbxassetid://2778873145"
-				sound.Volume = 0.2
-				
-				game:GetService("ContentProvider"):PreloadAsync({sound}, function()
-					game:GetService("SoundService"):PlayLocalSound(sound)
-				end)
-			end)
-			
 			local lookVector = camera.CFrame.LookVector
 			local fps = 1 / lastRenderSteppedDelay
 			
@@ -104,6 +94,14 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 		
 		if ray or ray2 then
 			
+			task.spawn(function()
+				local sound = Instance.new("Sound")
+				sound.SoundId = "rbxasset://sounds/action_jump.mp3"
+				game:GetService("ContentProvider"):PreloadAsync({sound}, function()
+					game:GetService("SoundService"):PlayLocalSound(sound)
+				end)
+			end)
+			
 			isClimbing = false
 			
 			local currentRay = ray or ray2
@@ -129,8 +127,6 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 	end
 end))
 
-local lastClimbSound = os.clock()
-
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	lastRenderSteppedDelay = d
 	local state = humanoid:GetState()
@@ -140,10 +136,6 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			canDash = true
 		end
 	end
-	
-	local climbSound = Instance.new("Sound")
-	climbSound.SoundId = "rbxasset://sounds/action_footsteps_plastic.mp3"
-	climbSound.PlaybackSpeed = 2
 	
 	if isClimbing then
 		local params = RaycastParams.new()
@@ -156,15 +148,6 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			if os.clock() - lastJump < 0.1 then
 				return
 			end
-			
-			task.spawn(function()
-				game:GetService("ContentProvider"):PreloadAsync({climbSound}, function()
-					if os.clock() - lastClimbSound > (2.481 / climbSound.PlaybackSpeed) then
-						game:GetService("SoundService"):PlayLocalSound(climbSound)
-						lastClimbSound = os.clock()
-					end
-				end)
-			end)
 			
 			local instance = ray.Instance
 			local normal = ray.Normal
