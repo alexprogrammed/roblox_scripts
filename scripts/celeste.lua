@@ -48,7 +48,7 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 						task.delay(lastRenderSteppedDelay * i, function()
 							for _, part in pairs(character:GetChildren()) do
 								if part:IsA("BasePart") then
-									part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.5, lookVector.Z).Unit * 75
+									part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.2, lookVector.Z).Unit * 100
 								end
 							end
 						end)
