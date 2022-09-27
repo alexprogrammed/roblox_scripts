@@ -156,6 +156,15 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			local size = instance.Size
 			local cframe = instance.CFrame
 			
+			if instance then
+				if instance:IsA("BasePart") then
+					if instance.Material == Enum.Material.Ice then
+						isClimbing = false
+						return
+					end
+				end
+			end
+			
 			local updatedNormal = Vector3.new(normal.X, 0, normal.Z)
 			
 			local pivotTo = CFrame.lookAt(root.Position, root.Position - updatedNormal)
