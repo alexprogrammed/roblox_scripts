@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local ContextActionService = game:GetService("ContextActionService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -30,158 +31,152 @@ function randomString()
 	return str
 end
 
-table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
+function dash()
+	if canDash then
+		isClimbing = false
+		canDash = false
 
-	if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.X then
-		if canDash then
-			isClimbing = false
-			canDash = false
+		local lookVector = camera.CFrame.LookVector
+		local fps = 1 / lastRenderSteppedDelay
 
-			local lookVector = camera.CFrame.LookVector
-			local fps = 1 / lastRenderSteppedDelay
-
-			local threads = {}
-
-			function createEffect()
-				local model = Instance.new("Model")
-				model.Name = randomString()
-				model.Parent = Workspace
-
-				for _, part in pairs(character:GetChildren()) do
-					if part:IsA("BasePart") then
-						local clone = Instance.new("Part")
-						clone.Name = randomString() 
-						clone.Color = Color3.new(1, 1, 1)
-						clone.CFrame = part.CFrame
-						clone.Material = Enum.Material.Neon
-						clone.Size = part.Size
-						clone.Anchored = true
-						clone.CanCollide = false
-						clone.CanQuery = false
-						clone.CanTouch = false
-						clone.Transparency = 0.8
-						clone.Parent = model
-
-						game:GetService("TweenService"):Create(clone, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {Transparency = 1}):Play()
-					end
-				end
-
-				task.delay(1, function()
-					if model then
-						model:Destroy()
-					end
-				end)
-			end
-
-			local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
-				if new == Enum.HumanoidStateType.Landed then
-					lookVector = Vector3.new(lookVector.X, 0, lookVector.Z)
-				end
-
-				if new == Enum.HumanoidStateType.Jumping then
-					for _, thread in pairs(threads) do
-						coroutine.close(thread)
-					end
-
-					task.delay(lastRenderSteppedDelay, function()
-						for _, part in pairs(character:GetChildren()) do
-							if part:IsA("BasePart") then
-								part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-							end
-						end
-
-						for i = 1, fps / 4 do
-							task.delay(lastRenderSteppedDelay * i, function()
-								for _, part in pairs(character:GetChildren()) do
-									if part:IsA("BasePart") then
-										part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.2, lookVector.Z).Unit * 100
-									end
-								end
-
-								if i % 2 == 0 then
-									createEffect()
-								end
-							end)
-						end
-
-					end)
-				end
-			end)
-
-			task.delay((lastRenderSteppedDelay * (fps / 6)), function()
-				stateChangedConnection:Disconnect()
-			end)
-
-			for i = 1, fps / 4 do
-				local thread = coroutine.create(function()
-					for _, part in pairs(character:GetChildren()) do
-						if part:IsA("BasePart") then
-							part.AssemblyLinearVelocity = lookVector.Unit * 75
-						end
-					end
-
-					if i % 2 == 0 then
-						createEffect()
-					end
-				end)
-
-				table.insert(threads, thread)
-
-				task.delay(lastRenderSteppedDelay * i, function()
-					if coroutine.status(thread) == "dead" then return end
-					coroutine.resume(thread)
-				end)
-			end
-		end
-	end
-
-	if input.KeyCode == Enum.KeyCode.Space then
-		if humanoid:GetState() == Enum.HumanoidStateType.Climbing or humanoid:GetState() == Enum.HumanoidStateType.Running then return end
-
-		local params = RaycastParams.new()
-		params.FilterType = Enum.RaycastFilterType.Blacklist
-		params.FilterDescendantsInstances = character:GetChildren()
-
-		local ray = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * 2, params)
-		local ray2 = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * -2, params)
-
-		if ray or ray2 then
-
-			task.spawn(function()
-				local sound = Instance.new("Sound")
-				sound.SoundId = "rbxasset://sounds/action_jump.mp3"
-				game:GetService("ContentProvider"):PreloadAsync({sound}, function()
-					game:GetService("SoundService"):PlayLocalSound(sound)
-				end)
-			end)
-
-			isClimbing = false
-
-			local currentRay = ray or ray2
-
-			local instance = currentRay.Instance
-			local normal = currentRay.Normal
-
-			local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and -normal.X) or (currentRay == ray2 and normal.X), 0, (currentRay == ray and -normal.Z) or (currentRay == ray2 and normal.Z)))
-			character:PivotTo(pivotTo)
+		local threads = {}
+		function createEffect()
+			local model = Instance.new("Model")
+			model.Name = randomString()
+			model.Parent = Workspace
 
 			for _, part in pairs(character:GetChildren()) do
-				if part:IsA("BasePart") then					
-					part.AssemblyLinearVelocity = Vector3.new(normal.X, 1, normal.Z).Unit * 60
+				if part:IsA("BasePart") then
+					local clone = Instance.new("Part")
+					clone.Name = randomString() 
+					clone.Color = Color3.new(1, 1, 1)
+					clone.CFrame = part.CFrame
+					clone.Material = Enum.Material.Neon
+					clone.Size = part.Size
+					clone.Anchored = true
+					clone.CanCollide = false
+					clone.CanQuery = false
+					clone.CanTouch = false
+					clone.Transparency = 0.8
+					clone.Parent = model
+
+					game:GetService("TweenService"):Create(clone, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {Transparency = 1}):Play()
 				end
 			end
 
-			lastJump = os.clock()
+			task.delay(1, function()
+				if model then
+					model:Destroy()
+				end
+			end)
+		end
+
+		local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
+			if new == Enum.HumanoidStateType.Landed then
+				lookVector = Vector3.new(lookVector.X, 0, lookVector.Z)
+			end
+
+			if new == Enum.HumanoidStateType.Jumping then
+				for _, thread in pairs(threads) do
+					coroutine.close(thread)
+				end
+
+				task.delay(lastRenderSteppedDelay, function()
+					for _, part in pairs(character:GetChildren()) do
+						if part:IsA("BasePart") then
+							part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+						end
+					end
+
+					for i = 1, fps / 4 do
+						task.delay(lastRenderSteppedDelay * i, function()
+							for _, part in pairs(character:GetChildren()) do
+								if part:IsA("BasePart") then
+									part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.2, lookVector.Z).Unit * 100
+								end
+							end
+
+							if i % 2 == 0 then
+								createEffect()
+							end
+						end)
+					end
+
+				end)
+			end
+		end)
+
+		task.delay((lastRenderSteppedDelay * (fps / 6)), function()
+			stateChangedConnection:Disconnect()
+		end)
+
+		for i = 1, fps / 4 do
+			local thread = coroutine.create(function()
+				for _, part in pairs(character:GetChildren()) do
+					if part:IsA("BasePart") then
+						part.AssemblyLinearVelocity = lookVector.Unit * 75
+					end
+				end
+
+				if i % 2 == 0 then
+					createEffect()
+				end
+			end)
+
+			table.insert(threads, thread)
+
+			task.delay(lastRenderSteppedDelay * i, function()
+				if coroutine.status(thread) == "dead" then return end
+				coroutine.resume(thread)
+			end)
 		end
 	end
+end
 
-	if input.KeyCode == Enum.KeyCode.Z or input.KeyCode == Enum.KeyCode.Q then
-		isClimbing = not isClimbing
+function climb()
+	isClimbing = not isClimbing
+end
+
+function jump()
+	if humanoid:GetState() == Enum.HumanoidStateType.Climbing or humanoid:GetState() == Enum.HumanoidStateType.Running then return end
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Blacklist
+	params.FilterDescendantsInstances = character:GetChildren()
+
+	local ray = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * 2, params)
+	local ray2 = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * -2, params)
+
+	if ray or ray2 then
+		task.spawn(function()
+			local sound = Instance.new("Sound")
+			sound.SoundId = "rbxasset://sounds/action_jump.mp3"
+			game:GetService("ContentProvider"):PreloadAsync({sound}, function()
+				game:GetService("SoundService"):PlayLocalSound(sound)
+			end)
+		end)
+
+		isClimbing = false
+
+		local currentRay = ray or ray2
+
+		local instance = currentRay.Instance
+		local normal = currentRay.Normal
+
+		local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and -normal.X) or (currentRay == ray2 and normal.X), 0, (currentRay == ray and -normal.Z) or (currentRay == ray2 and normal.Z)))
+		character:PivotTo(pivotTo)
+
+		for _, part in pairs(character:GetChildren()) do
+			if part:IsA("BasePart") then					
+				part.AssemblyLinearVelocity = Vector3.new(normal.X, 1, normal.Z).Unit * 60
+			end
+		end
+
+		lastJump = os.clock()
 	end
-end))
+end
 
-table.insert(connections, RunService.RenderStepped:Connect(function(d)
+function step(d)
 	lastRenderSteppedDelay = d
 	local state = humanoid:GetState()
 
@@ -251,12 +246,31 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	else
 		Workspace.Gravity = gravity
 	end
-end))
+end
+
+function handleAction(actionName, inputState, _inputObject)
+	if inputState == Enum.UserInputState.Begin then
+		if actionName == "CELESTE_DASH" then
+			dash()
+		elseif actionName == "CELESTE_CLIMB" then
+			climb()
+		end	
+	end
+end
+
+table.insert(connections, UserInputService.JumpRequest:Connect(jump))
+table.insert(connections, RunService.RenderStepped:Connect(step))
+
+ContextActionService:BindAction("CELESTE_DASH", handleAction, false, Enum.KeyCode.X, Enum.KeyCode.E)
+ContextActionService:BindAction("CELESTE_CLIMB", handleAction, false, Enum.KeyCode.Z, Enum.KeyCode.Q)
 
 humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
 		connection:Disconnect()
 	end
-
+	
+	ContextActionService:UnbindAction("CELESTE_DASH")
+	ContextActionService:UnbindAction("CELESTE_CLIMB")
+	
 	Workspace.Gravity = gravity
 end)
