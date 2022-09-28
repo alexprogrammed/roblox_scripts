@@ -212,25 +212,20 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 end))
 
 if syn then
-	local metatable = getrawmetatable(game)
-	setreadonly(metatable, false)
-	
-	local oldIndex = metatable.__index
-	metatable.__index = newcclosure(function(o, p)
-		if o == Workspace and p == "Gravity" then
-			return gravity
-		end
+	local oldIndex = nil
+	oldIndex = hookmetamethod(game, "__index", function(self, key)
+		if not checkcaller() and self == Workspace and key == "Gravity" then
+			if isClimbing then
+				return
+			end
+		end	
 		
-		return oldIndex(o, p)
+		return oldIndex(self, key)
 	end)
 	
 	local oldFunction = nil
 	oldFunction = hookfunction(Workspace:GetPropertyChangedSignal("Gravity"), newcclosure(function(self, changed)
-		if isClimbing then
-			return
-		end
-		
-		return oldFunction(self, changed)
+		return
 	end))
 end
 
@@ -278,7 +273,7 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 			
 			local pivotTo = CFrame.lookAt(root.Position, root.Position - updatedNormal)
 			
-			pivotTo *= CFrame.new(0, 0, - (distance - 0.7))
+			pivotTo *= CFrame.new(0, 0, - (distance - 0.8))
 			character:PivotTo(pivotTo)
 			
 			local cross = pivotTo.RightVector.Unit
@@ -310,4 +305,6 @@ humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
 		connection:Disconnect()
 	end
+	
+	Workspace.Gravity = gravity
 end)
