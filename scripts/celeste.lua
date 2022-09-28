@@ -1,5 +1,4 @@
 -- Celeste movement mechanics but in Roblox, requested by a friend.
--- https://github.com/nilkibite/roblox_scripts/blob/main/scripts/celeste.lua
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,6 +7,7 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local gravity = Workspace.Gravity
 
 local humanoid = character:WaitForChild("Humanoid", math.huge)
 local root = character:WaitForChild("HumanoidRootPart", math.huge)
@@ -211,6 +211,29 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 	end
 end))
 
+if syn then
+	local metatable = getrawmetatable(game)
+	setreadonly(metatable, false)
+	
+	local oldIndex = metatable.__index
+	metatable.__index = newcclosure(function(o, p)
+		if o == Workspace and p == "Gravity" then
+			return gravity
+		end
+		
+		return oldIndex(o, p)
+	end)
+	
+	local oldFunction = nil
+	oldFunction = hookfunction(Workspace:GetPropertyChangedSignal("Gravity"), newcclosure(function(self, changed)
+		if isClimbing then
+			return
+		end
+		
+		return oldFunction(self, changed)
+	end))
+end
+
 table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	lastRenderSteppedDelay = d
 	local state = humanoid:GetState()
@@ -222,6 +245,8 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 	end
 	
 	if isClimbing then
+		Workspace.Gravity = 0
+		
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
 		params.FilterDescendantsInstances = character:GetChildren()
@@ -276,6 +301,8 @@ table.insert(connections, RunService.RenderStepped:Connect(function(d)
 		else
 			isClimbing = false
 		end
+	else
+		Workspace.Gravity = gravity
 	end
 end))
 
