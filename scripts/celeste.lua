@@ -24,6 +24,12 @@ local lastJump = os.clock()
 
 if humanoid.Health <= 0 then return end
 
+function randomString()
+	local str = ""
+	for i = 1, 100 do str = str .. string.char(math.random(1,127)) end
+	return str
+end
+
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	
@@ -37,6 +43,67 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 			
 			local threads = {}
 			
+			local dashEffectParts = {}
+
+			if syn then
+				local oldIndex = nil
+				local oldFuncA, oldFuncB = nil, nil
+
+				oldIndex = hookmetamethod(game, "__index", function(self, key)
+					if not checkcaller() and self == Workspace and table.find(dashEffectParts, key) then return nil end
+					return oldIndex(self, key)
+				end)
+
+				oldFuncA = hookfunction(Workspace.ChildAdded, newcclosure(function(event, instance)
+					if table.find(dashEffectParts, instance.Name) then
+						return
+					end
+
+					return oldFuncA(event, instance)
+				end))
+				
+				oldFuncB = hookfunction(Workspace.ChildRemoved, newcclosure(function(event, instance)
+					if table.find(dashEffectParts, instance.Name) then
+						return
+					end
+
+					return oldFuncB(event, instance)
+				end))
+			end
+			
+			function createEffect()
+				local model = Instance.new("Model")
+				model.Name = randomString()
+				
+				table.insert(dashEffectParts, model.Name)
+				model.Parent = Workspace
+				
+				for _, part in pairs(character:GetChildren()) do
+					if part:IsA("BasePart") then
+						local clone = Instance.new("Part")
+						clone.Name = randomString() 
+						clone.Color = Color3.new(1, 1, 1)
+						clone.CFrame = part.CFrame
+						clone.Material = Enum.Material.Neon
+						clone.Size = part.Size
+						clone.Anchored = true
+						clone.CanCollide = false
+						clone.CanQuery = false
+						clone.CanTouch = false
+						clone.Transparency = 0.8
+						clone.Parent = model
+						
+						game:GetService("TweenService"):Create(clone, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {Transparency = 1}):Play()
+					end
+				end
+
+				task.delay(1, function()
+					if model then
+						model:Destroy()
+					end
+				end)
+			end
+			
 			local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
 				if new == Enum.HumanoidStateType.Landed then
 					lookVector = Vector3.new(lookVector.X, 0, lookVector.Z)
@@ -47,15 +114,28 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 						coroutine.close(thread)
 					end
 					
-					for i = 1, fps / 4 do
-						task.delay(lastRenderSteppedDelay * i, function()
-							for _, part in pairs(character:GetChildren()) do
-								if part:IsA("BasePart") then
-									part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.2, lookVector.Z).Unit * 100
-								end
+					task.delay(lastRenderSteppedDelay, function()
+						for _, part in pairs(character:GetChildren()) do
+							if part:IsA("BasePart") then
+								part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 							end
-						end)
-					end
+						end
+						
+						for i = 1, fps / 4 do
+							task.delay(lastRenderSteppedDelay * i, function()
+								for _, part in pairs(character:GetChildren()) do
+									if part:IsA("BasePart") then
+										part.AssemblyLinearVelocity = Vector3.new(lookVector.X, 0.2, lookVector.Z).Unit * 100
+									end
+								end
+
+								if i % 2 == 0 then
+									createEffect()
+								end
+							end)
+						end
+						
+					end)
 				end
 			end)
 			
@@ -69,6 +149,10 @@ table.insert(connections, UserInputService.InputBegan:Connect(function(input, ga
 						if part:IsA("BasePart") then
 							part.AssemblyLinearVelocity = lookVector.Unit * 75
 						end
+					end
+					
+					if i % 2 == 0 then
+						createEffect()
 					end
 				end)
 				
