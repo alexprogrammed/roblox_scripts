@@ -1,5 +1,9 @@
 -- Celeste movement mechanics but in Roblox, requested by a friend.
 
+if not config then
+	config = {dash = Enum.KeyCode.X, climb = Enum.KeyCode.Z}
+end
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -261,8 +265,8 @@ end
 table.insert(connections, UserInputService.JumpRequest:Connect(jump))
 table.insert(connections, RunService.RenderStepped:Connect(step))
 
-ContextActionService:BindAction("CELESTE_DASH", handleAction, false, Enum.KeyCode.X, Enum.KeyCode.E)
-ContextActionService:BindAction("CELESTE_CLIMB", handleAction, false, Enum.KeyCode.Z, Enum.KeyCode.Q)
+ContextActionService:BindAction("CELESTE_DASH", handleAction, false, config.dash or Enum.KeyCode.X)
+ContextActionService:BindAction("CELESTE_CLIMB", handleAction, false, config.climb or Enum.KeyCode.Z)
 
 humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
