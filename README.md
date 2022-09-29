@@ -5,3 +5,5 @@ I made this because I don't want to have to put the entire script inside the edi
 The scripts should work with SynapseX but I don't guarantee that they'll work with a different executor.
 # get
 Inside this folder is what you are probably looking for, these will auto update and have a config.
+# scripts
+Inside this folder is the source code of scripts, recommended to use get.
