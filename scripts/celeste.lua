@@ -323,6 +323,8 @@ table.insert(connections, RunService.RenderStepped:Connect(celestef._step))
 ContextActionService:BindAction("CELESTE_DASH", celestef.handleAction, false, config.dash or Enum.KeyCode.X)
 ContextActionService:BindAction("CELESTE_CLIMB", celestef.handleAction, false, config.climb or Enum.KeyCode.Z)
 
+if syn then _hook() end
+
 humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
 		connection:Disconnect()
