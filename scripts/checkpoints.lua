@@ -147,7 +147,7 @@ function _hook()
 	indexA = hookmetamethod(game, "__index", function(Self, Key)
 		if not checkcaller() and Self == Workspace then
 			for _, checkpoint in pairs(checkpoints) do
-				if Key == checkpoint[3].Name then
+				if Key == checkpoint[2].Name then
 					return nil
 				end
 			end
@@ -162,7 +162,7 @@ function _hook()
 			local instance = args[1]
 			if instance then
 				for _, checkpoint in pairs(checkpoints) do
-					if instance.Name == checkpoint[3].Name then
+					if instance.Name == checkpoint[2].Name then
 						return
 					end
 				end
@@ -178,7 +178,7 @@ function _hook()
 			local instance = args[1]
 			if instance then
 				for _, checkpoint in pairs(checkpoints) do
-					if instance.Name == checkpoint[3].Name then
+					if instance.Name == checkpoint[2].Name then
 						return
 					end
 				end
