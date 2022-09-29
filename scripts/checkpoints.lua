@@ -101,9 +101,16 @@ function checkpointf:gui()
 	
 	if syn then
 		syn.protect_gui(gui)
+	end
+	
+	local success, errorMessage = pcall(function()
 		gui.Parent = game:GetService("CoreGui")
-	else
-		gui.Parent = player:FindFirstChildOfClass("PlayerGui")
+	end)
+	
+	if not success then
+		if player:FindFirstChildOfClass("PlayerGui") then
+			gui.Parent = player:FindFirstChildOfClass("PlayerGui")
+		end
 	end
 end
 
