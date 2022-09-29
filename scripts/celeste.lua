@@ -1,8 +1,6 @@
 -- Celeste movement mechanics but in Roblox, requested by a friend.
 
-if not config then
-	config = {dash = Enum.KeyCode.X, climb = Enum.KeyCode.Z}
-end
+if not config then config = {dash = Enum.KeyCode.X, climb = Enum.KeyCode.Z} end
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -12,22 +10,73 @@ local ContextActionService = game:GetService("ContextActionService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local gravity = Workspace.Gravity
 
-local humanoid = character:WaitForChild("Humanoid", math.huge)
-local root = character:WaitForChild("HumanoidRootPart", math.huge)
+local humanoid, root = character:WaitForChild("Humanoid", math.huge), character:WaitForChild("HumanoidRootPart", math.huge)
 
 local camera = Workspace.CurrentCamera
 
-local canDash = true
-local isClimbing = false
-
 local connections = {}
 
+local celestev = {climb = false, dash = false, env = {gravity = Workspace.Gravity}, lastJump = os.clock()}
+local celestef = {}
+local celestei = {}
+
 local lastRenderSteppedDelay = 0
-local lastJump = os.clock()
 
 if humanoid.Health <= 0 then return end
+
+function _hook()
+	local indexA, funcA, funcB, funcC
+	indexA = hookmetamethod(game, "__index", function(Self, Key)
+		if not checkcaller() and Self == Workspace then
+			if celestei[Key] then
+				return nil
+			end
+			
+			if Key == "Gravity" then
+				return celestev.env.gravity
+			end
+		end
+
+		return indexA(Self, Key)
+	end)
+
+	funcA = hookfunction(Workspace.ChildAdded, newcclosure(function(event, ...)
+		if not checkcaller() then
+			local args = {...}
+			local instance = args[1]
+			if instance then
+				if celestei[instance.Name] then
+					return
+				end
+			end
+		end
+
+		return funcA(event, ...)
+	end))
+
+	funcB = hookfunction(Workspace.ChildRemoved, newcclosure(function(event, ...)
+		if not checkcaller() then
+			local args = {...}
+			local instance = args[1]
+			if instance then
+				if celestei[instance.Name] then
+					return
+				end
+			end
+		end
+
+		return funcB(event, ...)
+	end))
+	
+	funcC = hookfunction(Workspace:GetPropertyChangedSignal("Gravity"), newcclosure(function(event, ...)
+		if not checkcaller() then
+			return
+		end
+		
+		return funcC(event, ...)
+	end))
+end
 
 function randomString()
 	local str = ""
@@ -35,45 +84,49 @@ function randomString()
 	return str
 end
 
-function dash()
+function celestef:_dashEffect()
+	local model = Instance.new("Model")
+	model.Name = randomString()
+	celestei[model.Name] = true
+	
+	model.Parent = Workspace
+
+	for _, part in pairs(character:GetChildren()) do
+		if part:IsA("BasePart") then
+			local clone = Instance.new("Part")
+			clone.Name = randomString() 
+			clone.Color = Color3.new(1, 1, 1)
+			clone.CFrame = part.CFrame
+			clone.Material = Enum.Material.Neon
+			clone.Size = part.Size
+			clone.Anchored = true
+			clone.CanCollide = false
+			clone.CanQuery = false
+			clone.CanTouch = false
+			clone.Transparency = 0.8
+			clone.Parent = model
+
+			game:GetService("TweenService"):Create(clone, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {Transparency = 1}):Play()
+		end
+	end
+
+	task.delay(1, function()
+		celestei[model.Name] = nil
+		if model then
+			model:Destroy()
+		end
+	end)
+end
+
+function celestef:dash()
 	if canDash then
-		isClimbing = false
-		canDash = false
+		celestev.climb = false
+		celestev.dash = false
 
 		local lookVector = camera.CFrame.LookVector
 		local fps = 1 / lastRenderSteppedDelay
 
 		local threads = {}
-		function createEffect()
-			local model = Instance.new("Model")
-			model.Name = randomString()
-			model.Parent = Workspace
-
-			for _, part in pairs(character:GetChildren()) do
-				if part:IsA("BasePart") then
-					local clone = Instance.new("Part")
-					clone.Name = randomString() 
-					clone.Color = Color3.new(1, 1, 1)
-					clone.CFrame = part.CFrame
-					clone.Material = Enum.Material.Neon
-					clone.Size = part.Size
-					clone.Anchored = true
-					clone.CanCollide = false
-					clone.CanQuery = false
-					clone.CanTouch = false
-					clone.Transparency = 0.8
-					clone.Parent = model
-
-					game:GetService("TweenService"):Create(clone, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {Transparency = 1}):Play()
-				end
-			end
-
-			task.delay(1, function()
-				if model then
-					model:Destroy()
-				end
-			end)
-		end
 
 		local stateChangedConnection = humanoid.StateChanged:Connect(function(new, old)
 			if new == Enum.HumanoidStateType.Landed then
@@ -101,7 +154,7 @@ function dash()
 							end
 
 							if i % 2 == 0 then
-								createEffect()
+								celestef:_dashEffect()
 							end
 						end)
 					end
@@ -123,7 +176,7 @@ function dash()
 				end
 
 				if i % 2 == 0 then
-					createEffect()
+					celestef:_dashEffect()
 				end
 			end)
 
@@ -137,21 +190,31 @@ function dash()
 	end
 end
 
-function climb()
-	isClimbing = not isClimbing
+function celestef:climb()
+	celestev.climb = not celestev.climb
 end
 
-function jump()
-	if humanoid:GetState() == Enum.HumanoidStateType.Climbing or humanoid:GetState() == Enum.HumanoidStateType.Running then return end
-
+function celestef:_fray()
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Blacklist
 	params.FilterDescendantsInstances = character:GetChildren()
+	
+	return game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, -1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
+end
 
-	local ray = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * 2, params)
-	local ray2 = game:GetService("Workspace"):Raycast(root.Position, root.CFrame.LookVector * -2, params)
+function celestef:_bray()
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Blacklist
+	params.FilterDescendantsInstances = character:GetChildren()
+	
+	return game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, -1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * -2, params)
+end
 
-	if ray or ray2 then
+function celestef.jump()
+	if humanoid:GetState() == Enum.HumanoidStateType.Climbing or humanoid:GetState() == Enum.HumanoidStateType.Running or humanoid:GetState() == Enum.HumanoidStateType.Jumping then return end
+	local rayA, rayB = celestef:_fray(), celestef:_bray()
+
+	if rayA or rayB then
 		task.spawn(function()
 			local sound = Instance.new("Sound")
 			sound.SoundId = "rbxasset://sounds/action_jump.mp3"
@@ -160,14 +223,12 @@ function jump()
 			end)
 		end)
 
-		isClimbing = false
+		celestev.climb = false
+		
+		local ray = rayA or rayB
+		local instance, normal = ray.Instance, ray.Normal
 
-		local currentRay = ray or ray2
-
-		local instance = currentRay.Instance
-		local normal = currentRay.Normal
-
-		local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((currentRay == ray and -normal.X) or (currentRay == ray2 and normal.X), 0, (currentRay == ray and -normal.Z) or (currentRay == ray2 and normal.Z)))
+		local pivotTo = CFrame.lookAt(root.Position, root.Position - Vector3.new((ray == rayA and -normal.X) or (ray == rayB and normal.X), 0, (ray == rayA and -normal.Z) or (ray == rayB and normal.Z)))
 		character:PivotTo(pivotTo)
 
 		for _, part in pairs(character:GetChildren()) do
@@ -176,45 +237,39 @@ function jump()
 			end
 		end
 
-		lastJump = os.clock()
+		celestev.lastJump = os.clock()
 	end
 end
 
-function step(d)
+function celestef._step(d)
 	lastRenderSteppedDelay = d
 	local state = humanoid:GetState()
 
 	if state == Enum.HumanoidStateType.Running then
-		if not isClimbing then
+		if not celestev.climb then
 			canDash = true
 		end
 	end
 
-	if isClimbing then
+	if celestev.climb then
 		Workspace.Gravity = 0
 
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Blacklist
 		params.FilterDescendantsInstances = character:GetChildren()
 
-		local ray = game:GetService("Workspace"):Raycast(root.Position - Vector3.new(0, 1, 0), (root.CFrame * CFrame.new(0, -1, 0)).LookVector * 2, params)
+		local ray = celestef:_fray()
 
 		if ray then
-			if os.clock() - lastJump < 0.1 then
-				return
-			end
+			if os.clock() - celestev.lastJump < (lastRenderSteppedDelay * 2) then return end
 
-			local instance = ray.Instance
-			local normal = ray.Normal
-			local distance = ray.Distance
-
-			local size = instance.Size
-			local cframe = instance.CFrame
-
+			local instance, normal, distance = ray.Instance, ray.Normal, ray.Distance
+			local size, cframe = instance.Size, instance.CFrame
+			
 			if instance then
 				if instance:IsA("BasePart") then
 					if instance.Material == Enum.Material.Ice then
-						isClimbing = false
+						celestev.climb = false
 						return
 					end
 				end
@@ -245,28 +300,28 @@ function step(d)
 				end
 			end
 		else
-			isClimbing = false
+			celestev.climb = false
 		end
 	else
-		Workspace.Gravity = gravity
+		Workspace.Gravity = celestev.env.gravity
 	end
 end
 
-function handleAction(actionName, inputState, _inputObject)
+function celestef.handleAction(actionName, inputState, _inputObject)
 	if inputState == Enum.UserInputState.Begin then
 		if actionName == "CELESTE_DASH" then
-			dash()
+			celestef:dash()
 		elseif actionName == "CELESTE_CLIMB" then
-			climb()
+			celestef:climb()
 		end	
 	end
 end
 
-table.insert(connections, UserInputService.JumpRequest:Connect(jump))
-table.insert(connections, RunService.RenderStepped:Connect(step))
+table.insert(connections, UserInputService.JumpRequest:Connect(celestef.jump))
+table.insert(connections, RunService.RenderStepped:Connect(celestef._step))
 
-ContextActionService:BindAction("CELESTE_DASH", handleAction, false, config.dash or Enum.KeyCode.X)
-ContextActionService:BindAction("CELESTE_CLIMB", handleAction, false, config.climb or Enum.KeyCode.Z)
+ContextActionService:BindAction("CELESTE_DASH", celestef.handleAction, false, config.dash or Enum.KeyCode.X)
+ContextActionService:BindAction("CELESTE_CLIMB", celestef.handleAction, false, config.climb or Enum.KeyCode.Z)
 
 humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
@@ -276,5 +331,5 @@ humanoid.Died:Once(function()
 	ContextActionService:UnbindAction("CELESTE_DASH")
 	ContextActionService:UnbindAction("CELESTE_CLIMB")
 	
-	Workspace.Gravity = gravity
+	Workspace.Gravity = celestev.env.gravity
 end)
