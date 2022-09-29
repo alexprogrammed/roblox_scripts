@@ -30,7 +30,7 @@ function checkpointf.set()
 		local root = character.PrimaryPart
 		if root then
 			local part = Instance.new("Part")
-			part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored = root.CFrame, root.Size, CFrame.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true
+			part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored = root.CFrame, root.Size, Color3.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true
 			table.insert(checkpoints, {[1] = root.CFrame, [2] = part})
 			part.Parent = Workspace
 		end
