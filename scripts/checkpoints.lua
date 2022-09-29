@@ -25,7 +25,7 @@ function checkpointf:gui()
 	gui.DisplayOrder, gui.Name, gui.IgnoreGuiInset = 2147483647, randomString(), true
 	detector.BackgroundTransparency, detector.Position, detector.Size, detector.Name, detector.Parent = 1, UDim2.new(0, 0, 0.8, 0), UDim2.new(1, 0, 0.2, 0), randomString(), gui
 	frame.Size, frame.Position, frame.Name, frame.BackgroundTransparency, frame.Parent = UDim2.new(1, 0, 0.2, 0), UDim2.new(0, 0, 1, 0), randomString(), 1, gui
-	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Ubuntu, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), frame
+	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Arcade, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), frame
 	
 	local connections = {
 		
@@ -49,7 +49,7 @@ function checkpointf:gui()
 				connection:Disconnect()
 				frame.Position = UDim2.new(0, 0, 0.9, 0)
 			else
-				frame.Position = UDim2.new(0, 0, 1, 0):Lerp(UDim2.new(0, 0, 0.9, 0), os.clock() - lerpStart)
+				frame.Position = UDim2.new(0, 0, 1, 0):Lerp(UDim2.new(0, 0, 0.9, 0), (os.clock() - lerpStart) * 2)
 			end
 		end)
 		table.insert(connections, connection)
@@ -67,7 +67,7 @@ function checkpointf:gui()
 				connection:Disconnect()
 				frame.Position = UDim2.new(0, 0, 1, 0)
 			else
-				frame.Position = UDim2.new(0, 0, 0.9, 0):Lerp(UDim2.new(0, 0, 1, 0), os.clock() - lerpStart)
+				frame.Position = UDim2.new(0, 0, 0.9, 0):Lerp(UDim2.new(0, 0, 1, 0), (os.clock() - lerpStart) * 2)
 			end
 		end)
 		table.insert(connections, connection)
