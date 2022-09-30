@@ -1,6 +1,6 @@
 -- Obby checkpoint system, requested by a friend.
 
-if not config then config = {set = Enum.KeyCode.E, teleport = Enum.KeyCode.R, unset = Enum.KeyCode.Q} end
+if not config then config = {keybinds = {set = Enum.KeyCode.E, unset = Enum.KeyCode.Q, teleport = Enum.KeyCode.R}, saveCameraAngle = true} end
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
 local character = player.Character or player.CharacterAdded:Wait()
 
 function randomString()
@@ -28,7 +29,7 @@ function checkpointf:gui()
 	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.RichText, text.TextXAlignment, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Arcade, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), true, Enum.TextXAlignment.Left, frame
 	
 	local connections = {}
-	local messages = {config.set.Name..": set", config.unset.Name..": unset", config.teleport.Name..": teleport"}
+	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport"}
 	
 	local function _anim(start:UDim2, finish:UDim2)
 		for _, connection in pairs(connections) do
@@ -116,7 +117,7 @@ function checkpointf:set()
 		if root then
 			local part = Instance.new("Part")
 			part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored, part.Name = root.CFrame, root.Size, Color3.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true, randomString()
-			table.insert(checkpoints, {[1] = root.CFrame, [2] = part})
+			table.insert(checkpoints, {[1] = root.CFrame, [2] = part, [3] = camera.CFrame})
 			part.Parent = Workspace
 		end
 	end
@@ -128,6 +129,9 @@ function checkpointf:teleport()
 			local root = character.PrimaryPart
 			if root then
 				character:PivotTo(checkpoints[#checkpoints][1])
+				if config.saveCameraAngle then
+					camera.CFrame = checkpoints[#checkpoints][3]
+				end
 			end
 		end
 	end
@@ -183,9 +187,9 @@ end
 function characterAdded() character = player.Character end
 
 function inputBegan(input, gameProcessed) if gameProcessed then return end
-	if input.KeyCode == config.set then checkpointf:set() end
-	if input.KeyCode == config.unset then checkpointf:unset() end
-	if input.KeyCode == config.teleport then checkpointf:teleport() end
+	if input.KeyCode == config.keybinds.set then checkpointf:set() end
+	if input.KeyCode == config.keybinds.unset then checkpointf:unset() end
+	if input.KeyCode == config.keybinds.teleport then checkpointf:teleport() end
 end
 
 function mouseEnter()
