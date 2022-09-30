@@ -65,7 +65,7 @@ function celestef:_dashEffect()
 end
 
 function celestef:dash()
-	if canDash then
+	if celestev.dash then
 		celestev.climb = false
 		celestev.dash = false
 
@@ -193,7 +193,7 @@ function celestef._step(d)
 
 	if state == Enum.HumanoidStateType.Running then
 		if not celestev.climb then
-			canDash = true
+			celestev.dash = true
 		end
 	end
 
@@ -259,7 +259,7 @@ function celestef.handleAction(actionName, inputState, _inputObject)
 			celestef:dash()
 		elseif actionName == "CELESTE_CLIMB" then
 			celestef:climb()
-		end	
+		end
 	end
 end
 
@@ -275,7 +275,7 @@ humanoid.Died:Once(function()
 	for _, connection in pairs(connections) do
 		connection:Disconnect()
 	end
-	
+
 	ContextActionService:UnbindAction("CELESTE_DASH")
 	ContextActionService:UnbindAction("CELESTE_CLIMB")
 	
