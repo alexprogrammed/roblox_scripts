@@ -1,9 +1,19 @@
 # roblox_scripts
 This is where I post Roblox scripts that I've made.<br>
 # about
-I made this because I don't want to have to put the entire script inside the editor, it's better to use HttpGet with raw content. Plus using HttpGet will auto-update the module based off of what is in GitHub.<br><br>
-The scripts should work with SynapseX but I wont guarantee they'll work with a different executor.
+I made this so I could use scripts without having to put the source code inside the executor. These scripts should work with SynapseX and maybe Script-Ware. **Due to many exploits becoming a subscription service, updates here will be rare.**
 # script
-Inside this folder is what you are probably looking for, these will auto update and have a config. These scripts GET a lua file in source with the same name.
+Inside this folder is the loadstring and config for scripts. These use `loadstring` with `game:HttpGet` along with a customizable config. These will auto-update, look in the source folder for the source code.
+```lua
+-- Config Example
+getgenv().config = {
+  A = true,
+  B = false,
+  C = 1
+}
+
+-- Loadstring Example
+loadstring(game:HttpGet("https://raw.githubusercontent.com/nilkibite/roblox_scripts/main/source/example.lua"))()
+```
 # source
-Inside this folder is the source code of scripts, recommended to use the scripts from the script folder.
+Inside this folder is the source code of scripts, recommended to use the scripts from the script folder. These will not auto-update.
