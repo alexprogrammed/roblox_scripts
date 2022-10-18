@@ -13,7 +13,7 @@ getgenv().config = {
 }
 
 -- Loadstring Example
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nilkibite/roblox_scripts/main/source/example.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alexprogrammed/roblox_scripts/main/source/example.lua"))()
 ```
 # source
 Inside this folder is the source code of scripts, recommended to use the scripts from the script folder. These will not auto-update.
