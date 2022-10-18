@@ -7,4 +7,4 @@ getgenv().config = {
   saveCameraAngle = true
 }
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nilkibite/roblox_scripts/main/source/checkpoints.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alexprogrammed/roblox_scripts/main/source/checkpoints.lua"))()
