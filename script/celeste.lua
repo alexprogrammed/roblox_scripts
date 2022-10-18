@@ -3,4 +3,4 @@ getgenv().config = {
   climb = Enum.KeyCode.Z
 }
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/nilkibite/roblox_scripts/main/source/celeste.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alexprogrammed/roblox_scripts/main/source/celeste.lua"))()
