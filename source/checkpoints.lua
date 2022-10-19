@@ -30,7 +30,7 @@ function checkpointf:gui()
 	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.RichText, text.TextXAlignment, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Arcade, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), true, Enum.TextXAlignment.Left, frame
 	
 	local connections = {}
-	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport", config.keybinds.lastStable..": lastStable"}
+	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport"}
 	
 	local function _anim(start:UDim2, finish:UDim2)
 		for _, connection in pairs(connections) do
