@@ -1,16 +1,17 @@
 -- Obby checkpoint system, requested by a friend.
 
-if not config then config = {keybinds = {set = Enum.KeyCode.E, unset = Enum.KeyCode.Q, teleport = Enum.KeyCode.R}, saveCameraAngle = true} end
+if not config then config = {keybinds = {set = Enum.KeyCode.E, unset = Enum.KeyCode.Q, teleport = Enum.KeyCode.R, lastStable = Enum.KeyCode.F}, saveCameraAngle = true} end
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
 local character = player.Character or player.CharacterAdded:Wait()
+local root = character.PrimaryPart
+local humanoid = character:WaitForChild("Humanoid")
 
 function randomString()
 	local str = ""
@@ -18,7 +19,7 @@ function randomString()
 	return str
 end
 
-local checkpoints = {}
+local checkpointd = {}
 local checkpointf = {}
 
 function checkpointf:gui()
@@ -29,7 +30,7 @@ function checkpointf:gui()
 	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.RichText, text.TextXAlignment, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Arcade, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), true, Enum.TextXAlignment.Left, frame
 	
 	local connections = {}
-	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport"}
+	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport", config.keybinds.lastStable..": lastStable"}
 	
 	local function _anim(start:UDim2, finish:UDim2)
 		for _, connection in pairs(connections) do
@@ -100,91 +101,43 @@ function checkpointf:gui()
 end
 
 function checkpointf:unset()
-	if #checkpoints > 0 then
-		local checkpoint = checkpoints[#checkpoints]
+	if #checkpointd > 0 then
+		local checkpoint = checkpointd[#checkpointd]
 		
 		if checkpoint[2] then
 			checkpoint[2]:Destroy()
 		end
 		
-		table.remove(checkpoints, #checkpoints)
+		table.remove(checkpointd, #checkpointd)
 	end
 end
 
 function checkpointf:set()
-	if character then
-		local root = character.PrimaryPart
-		if root then
-			local part = Instance.new("Part")
-			part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored, part.Name = root.CFrame, root.Size, Color3.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true, randomString()
-			table.insert(checkpoints, {[1] = root.CFrame, [2] = part, [3] = camera.CFrame})
-			part.Parent = Workspace
-		end
+	if character and root then
+        local part = Instance.new("Part")
+        part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored, part.Name = root.CFrame, root.Size, Color3.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true, randomString()
+        table.insert(checkpointd, {[1] = root.CFrame, [2] = part, [3] = camera.CFrame, [4] = humanoid:GetState()})
+        part.Parent = Workspace
 	end
 end
 
 function checkpointf:teleport()
-	if #checkpoints > 0 then
-		if character then
-			local root = character.PrimaryPart
-			if root then
-				character:PivotTo(checkpoints[#checkpoints][1])
-				if config.saveCameraAngle then
-					camera.CFrame = checkpoints[#checkpoints][3]
-				end
-			end
-		end
+	if #checkpointd > 0 then
+		if character and root then
+            character:PivotTo(checkpointd[#checkpointd][1])
+            humanoid:ChangeState(checkpointd[#checkpointd][4])
+            if config.saveCameraAngle then
+                camera.CFrame = checkpointd[#checkpointd][3]
+            end
+        end
 	end
 end
 
-function _hook()
-	local indexA, funcA, funcB
-	indexA = hookmetamethod(game, "__index", function(Self, Key)
-		if not checkcaller() and Self == Workspace then
-			for _, checkpoint in pairs(checkpoints) do
-				if Key == checkpoint[2].Name then
-					return nil
-				end
-			end
-		end
-		
-		return indexA(Self, Key)
-	end)
-	
-	funcA = hookfunction(Workspace.ChildAdded, newcclosure(function(event, ...)
-		if not checkcaller() then
-			local args = {...}
-			local instance = args[1]
-			if instance then
-				for _, checkpoint in pairs(checkpoints) do
-					if instance.Name == checkpoint[2].Name then
-						return
-					end
-				end
-			end
-		end
-		
-		return funcA(event, ...)
-	end))
-	
-	funcB = hookfunction(Workspace.ChildRemoved, newcclosure(function(event, ...)
-		if not checkcaller() then
-			local args = {...}
-			local instance = args[1]
-			if instance then
-				for _, checkpoint in pairs(checkpoints) do
-					if instance.Name == checkpoint[2].Name then
-						return
-					end
-				end
-			end
-		end
-		
-		return funcB(event, ...)
-	end))
+function characterAdded()
+    character = player.Character
+    humanoid = character:WaitForChild("Humanoid")
+    root = character.PrimaryPart
 end
-
-function characterAdded() character = player.Character end
 
 function inputBegan(input, gameProcessed) if gameProcessed then return end
 	if input.KeyCode == config.keybinds.set then checkpointf:set() end
@@ -192,15 +145,7 @@ function inputBegan(input, gameProcessed) if gameProcessed then return end
 	if input.KeyCode == config.keybinds.teleport then checkpointf:teleport() end
 end
 
-function mouseEnter()
-	
-end
-
 UserInputService.InputBegan:Connect(inputBegan)
 player.CharacterAdded:Connect(characterAdded)
-
-if syn then
-	_hook()
-end
 
 checkpointf:gui()
