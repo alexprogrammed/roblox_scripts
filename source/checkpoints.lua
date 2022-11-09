@@ -159,7 +159,8 @@ function checkpointf:teleport()
             end
 
 			if Config.saveMousePosition then
-				camera.CFrame = checkpointd[#checkpointd]["mouse_position"]
+				local pos = checkpointd[#checkpointd]["mouse_position"]
+				mousemoveabs(pos.x, pos.y)
 			end
         end
 	end
