@@ -160,7 +160,7 @@ function checkpointf:teleport()
 
 			if Config.saveMousePosition then
 				local pos = checkpointd[#checkpointd]["mouse_position"]
-				mousemoveabs(pos.x, pos.y)
+				mousemoveabs(pos.X, pos.Y)
 			end
         end
 	end
