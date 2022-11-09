@@ -5,6 +5,7 @@ getgenv().config = {
     unset = Enum.KeyCode.Q
   },
   saveCameraAngle = true,
+  saveMousePosition = true,
   checkpoint = {
     color = Color3.fromRGB(255, 255, 255),
     transparency = 0.5
