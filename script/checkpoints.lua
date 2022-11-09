@@ -12,4 +12,4 @@ getgenv().config = {
   }
 }
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/alexprogrammed/roblox_scripts/main/source/checkpoints.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alexprogrammed/roblox_scripts/dev/source/checkpoints.lua"))()
