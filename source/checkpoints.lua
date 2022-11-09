@@ -1,6 +1,30 @@
 -- Obby checkpoint system, requested by a friend.
 
-if not config then config = {keybinds = {set = Enum.KeyCode.E, unset = Enum.KeyCode.Q, teleport = Enum.KeyCode.R, lastStable = Enum.KeyCode.F}, saveCameraAngle = true} end
+local Config = getgenv()["config"]
+local DefaultConfig = {
+	keybinds = {
+		set = Enum.KeyCode.E,
+		teleport = Enum.KeyCode.R,
+		unset = Enum.KeyCode.Q
+	},
+	saveCameraAngle = true,
+	saveMousePosition = true,
+	checkpoint = {
+		color = Color3.fromRGB(255, 255, 255),
+		transparency = 0.5
+	}
+}
+if Config then
+	for index, value in pairs(DefaultConfig) do
+		if not Config[index] then
+			Config[index] = value
+		end
+	end
+else
+	Config = DefaultConfig
+end
+
+local protect_gui = syn.protect_gui or protect_gui or function() end
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -9,6 +33,7 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
+local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
 local root = character.PrimaryPart
 local humanoid = character:WaitForChild("Humanoid")
@@ -22,15 +47,15 @@ end
 local checkpointd = {}
 local checkpointf = {}
 
-function checkpointf:gui()
-	local gui, detector, text, frame = Instance.new("ScreenGui"), Instance.new("Frame"), Instance.new("TextLabel"), Instance.new("Frame")
-	gui.DisplayOrder, gui.Name, gui.IgnoreGuiInset = 2147483647, randomString(), true
-	detector.BackgroundTransparency, detector.Position, detector.Size, detector.Name, detector.Parent = 1, UDim2.new(0, 0, 0.9, 0), UDim2.new(1, 0, 0.1, 0), randomString(), gui
-	frame.Size, frame.Position, frame.Name, frame.BackgroundTransparency, frame.Parent = UDim2.new(0.2, 0, 0, 64), UDim2.new(0.05, 0, 1, 0), randomString(), 1, gui
+function checkpointf:ui()
+	local ui, detector, text, frame = Instance.new("ScreenGui"), Instance.new("Frame"), Instance.new("TextLabel"), Instance.new("Frame")
+	ui.DisplayOrder, ui.Name, ui.IgnoreGuiInset = 2147483647, randomString(), true
+	detector.BackgroundTransparency, detector.Position, detector.Size, detector.Name, detector.Parent = 1, UDim2.new(0, 0, 0.9, 0), UDim2.new(1, 0, 0.1, 0), randomString(), ui
+	frame.Size, frame.Position, frame.Name, frame.BackgroundTransparency, frame.Parent = UDim2.new(0.2, 0, 0, 64), UDim2.new(0.05, 0, 1, 0), randomString(), 1, ui
 	text.Size, text.Position, text.Name, text.BackgroundTransparency, text.Text, text.TextScaled, text.Font, text.TextColor3, text.TextStrokeTransparency, text.TextStrokeColor3, text.RichText, text.TextXAlignment, text.Parent = UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), randomString(), 1, "", true, Enum.Font.Arcade, Color3.new(1, 1, 1), 0, Color3.new(0, 0, 0), true, Enum.TextXAlignment.Left, frame
 	
 	local connections = {}
-	local messages = {config.keybinds.set.Name..": set", config.keybinds.unset.Name..": unset", config.keybinds.teleport.Name..": teleport"}
+	local messages = {Config.keybinds.set.Name..": set", Config.keybinds.unset.Name..": unset", Config.keybinds.teleport.Name..": teleport"}
 	
 	local function _anim(start:UDim2, finish:UDim2)
 		for _, connection in pairs(connections) do
@@ -85,17 +110,19 @@ function checkpointf:gui()
 		end
 	end)
 	
-	if syn then
-		syn.protect_gui(gui)
-	end
+	protect_gui(ui)
 	
-	local success, errorMessage = pcall(function()
-		gui.Parent = game:GetService("CoreGui")
+	local success, _ = pcall(function()
+		if game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
+			ui.Parent = game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+		else
+			ui.Parent = game:GetService("CoreGui")
+		end
 	end)
 	
 	if not success then
 		if player:FindFirstChildOfClass("PlayerGui") then
-			gui.Parent = player:FindFirstChildOfClass("PlayerGui")
+			ui.Parent = player:FindFirstChildOfClass("PlayerGui")
 		end
 	end
 end
@@ -104,8 +131,8 @@ function checkpointf:unset()
 	if #checkpointd > 0 then
 		local checkpoint = checkpointd[#checkpointd]
 		
-		if checkpoint[2] then
-			checkpoint[2]:Destroy()
+		if checkpoint["visual"] then
+			checkpoint["visual"]:Destroy()
 		end
 		
 		table.remove(checkpointd, #checkpointd)
@@ -115,8 +142,8 @@ end
 function checkpointf:set()
 	if character and root then
         local part = Instance.new("Part")
-        part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored, part.Name = root.CFrame, root.Size, Color3.new(1, 0, 0), Enum.Material.Neon, 0.5, false, true, randomString()
-        table.insert(checkpointd, {[1] = root.CFrame, [2] = part, [3] = camera.CFrame, [4] = humanoid:GetState()})
+        part.CFrame, part.Size, part.Color, part.Material, part.Transparency, part.CanCollide, part.Anchored, part.Name = root.CFrame, root.Size, Config.checkpoint.color, Enum.Material.Neon, Config.checkpoint.transparency, false, true, randomString()
+        table.insert(checkpointd, {["position"] = root.CFrame, ["visual"] = part, ["camera_position"] = camera.CFrame, ["humanoid_state"] = humanoid:GetState(), ["mouse_position"] = Vector2.new(mouse.x, mouse.y)})
         part.Parent = Workspace
 	end
 end
@@ -124,11 +151,16 @@ end
 function checkpointf:teleport()
 	if #checkpointd > 0 then
 		if character and root then
-            character:PivotTo(checkpointd[#checkpointd][1])
-            humanoid:ChangeState(checkpointd[#checkpointd][4])
-            if config.saveCameraAngle then
-                camera.CFrame = checkpointd[#checkpointd][3]
+            character:PivotTo(checkpointd[#checkpointd]["position"])
+            humanoid:ChangeState(checkpointd[#checkpointd]["humanoid_state"])
+
+            if Config.saveCameraAngle then
+                camera.CFrame = checkpointd[#checkpointd]["camera_position"]
             end
+
+			if Config.saveMousePosition then
+				camera.CFrame = checkpointd[#checkpointd]["mouse_position"]
+			end
         end
 	end
 end
@@ -140,12 +172,12 @@ function characterAdded()
 end
 
 function inputBegan(input, gameProcessed) if gameProcessed then return end
-	if input.KeyCode == config.keybinds.set then checkpointf:set() end
-	if input.KeyCode == config.keybinds.unset then checkpointf:unset() end
-	if input.KeyCode == config.keybinds.teleport then checkpointf:teleport() end
+	if input.KeyCode == Config.keybinds.set then checkpointf:set() end
+	if input.KeyCode == Config.keybinds.unset then checkpointf:unset() end
+	if input.KeyCode == Config.keybinds.teleport then checkpointf:teleport() end
 end
 
 UserInputService.InputBegan:Connect(inputBegan)
 player.CharacterAdded:Connect(characterAdded)
 
-checkpointf:gui()
+checkpointf:ui()
