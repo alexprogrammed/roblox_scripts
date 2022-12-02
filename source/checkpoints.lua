@@ -24,7 +24,7 @@ else
 	Config = DefaultConfig
 end
 
-local protect_gui = syn.protect_gui or protect_gui or function() end
+local protect_gui = syn.protect_gui or protect_gui or function(X) end
 
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -167,9 +167,7 @@ function checkpointf:teleport()
 end
 
 function characterAdded()
-    character = player.Character
-    humanoid = character:WaitForChild("Humanoid")
-    root = character.PrimaryPart
+    character, humanoid, root = player.Character, player.Character:WaitForChild("Humanoid"), player.Character.PrimaryPart
 end
 
 function inputBegan(input, gameProcessed) if gameProcessed then return end
@@ -178,7 +176,11 @@ function inputBegan(input, gameProcessed) if gameProcessed then return end
 	if input.KeyCode == Config.keybinds.teleport then checkpointf:teleport() end
 end
 
-UserInputService.InputBegan:Connect(inputBegan)
 player.CharacterAdded:Connect(characterAdded)
+UserInputService.InputBegan:Connect(function(input, _g)
+	if input.KeyCode == Config.keybinds.set then checkpointf:set() end
+	if input.KeyCode == Config.keybinds.unset then checkpointf:unset() end
+	if input.KeyCode == Config.keybinds.teleport then checkpointf:teleport() end
+end)
 
 checkpointf:ui()
